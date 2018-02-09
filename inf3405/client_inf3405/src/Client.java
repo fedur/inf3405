@@ -1,19 +1,26 @@
-package client_tp2;
-
+import java.awt.image.BufferedImage;
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Stack;
+
+import javax.imageio.ImageIO;
 
 public class Client {
 	public static void main(String[] args) throws UnknownHostException, IOException, ClassNotFoundException {
@@ -25,6 +32,7 @@ public class Client {
 			String port = "";
 			String usager = "";
 			String motDePasse = "";
+			String nomImage = "";
 			
 			do{
 				System.out.print("Entrez l'adresse ip du serveur: ");
@@ -35,33 +43,65 @@ public class Client {
 				System.out.print("Entrez le port du socket: ");
 				port = prompt.nextLine();
 			}while(!portIsValid(port));
-			
-			System.out.print("Entrez votre nom d'usager: ");
-			usager = prompt.nextLine();
-			
-			System.out.print("Entrez votre mot de passe: ");
-			motDePasse = prompt.nextLine();
-			
-			clientSocket = new Socket(adresse,Integer.parseInt(port));
-			ObjectOutputStream objectOutput = new ObjectOutputStream(clientSocket.getOutputStream());
-			
-			objectOutput.writeObject(Arrays.asList(usager,motDePasse));
-			objectOutput.flush();
 
-			ObjectInputStream obj = new ObjectInputStream(clientSocket.getInputStream());
-			@SuppressWarnings("unchecked")
-			List<String> receivedStrings = (List<String>) obj.readObject();
-		 
-			for (String s : receivedStrings)
+			clientSocket = new Socket(adresse,Integer.parseInt(port));
+			OutputStream outputStream = clientSocket.getOutputStream();
+			
+			boolean authenticationIsOk = true;
+			do
 			{
-				System.out.println(s);
-			}
+				System.out.print("Entrez votre nom d'usager: ");
+				usager = prompt.nextLine();
+				
+				System.out.print("Entrez votre mot de passe: ");
+				motDePasse = prompt.nextLine();
+				String usagerMP = usager + " " + motDePasse;
+				outputStream.write(usagerMP.getBytes());
+				outputStream.flush();
+				
+				InputStream inputStream = clientSocket.getInputStream();
+				
+				byte[] response = new byte[1024];
+				inputStream.read(response);
+				String result = new String(response);
+				System.out.println(result);
+				String[] splitResult = result.split(" ", 2);
+				if (splitResult[0].equals("0"))
+				{
+					authenticationIsOk = false;
+				}
+				else if (splitResult[0].equals("1"))
+				{
+					authenticationIsOk = true;
+				}
+				else
+				{
+					System.out.println("ERROR: REPEAT");
+					continue;
+				}
+				System.out.println(splitResult[1]);
+			}while (!authenticationIsOk);
+			
+			System.out.print("Entrez le nom de l'image à modifier: ");
+			nomImage = prompt.nextLine();
+			
+			BufferedImage image = ImageIO.read(new File("lassonde.jpg"));
+			System.out.println(image);
+
+	        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+	        ImageIO.write(image, "jpg", byteArrayOutputStream);
+
+	        byte[] size = ByteBuffer.allocate(4).putInt(byteArrayOutputStream.size()).array();
+	        outputStream.write(size);
+	        outputStream.write(byteArrayOutputStream.toByteArray());
+	        outputStream.flush();
 			
 		} finally {
 			// Fermeture du socket.
 			clientSocket.close(); 
 		}
 	}
+	
 	
 	private static boolean adressIsValid(String adress)
 	{
