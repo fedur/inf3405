@@ -1,5 +1,6 @@
 import java.awt.image.BufferedImage;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.Stack;
 
+import javax.imageio.IIOException;
 import javax.imageio.ImageIO;
 
 public class Client {
@@ -28,11 +30,14 @@ public class Client {
 		Socket clientSocket = null;
 		try {
 			Scanner prompt = new Scanner(System.in);
+			InputStream inputStream = null;
+			OutputStream outputStream = null;
 			String adresse = "";
 			String port = "";
 			String usager = "";
 			String motDePasse = "";
 			String nomImage = "";
+			String nouveauNomImage = "";
 			
 			do{
 				System.out.print("Entrez l'adresse ip du serveur: ");
@@ -45,7 +50,7 @@ public class Client {
 			}while(!portIsValid(port));
 
 			clientSocket = new Socket(adresse,Integer.parseInt(port));
-			OutputStream outputStream = clientSocket.getOutputStream();
+			outputStream = clientSocket.getOutputStream();
 			
 			boolean authenticationIsOk = true;
 			do
@@ -59,12 +64,11 @@ public class Client {
 				outputStream.write(usagerMP.getBytes());
 				outputStream.flush();
 				
-				InputStream inputStream = clientSocket.getInputStream();
+				inputStream = clientSocket.getInputStream();
 				
 				byte[] response = new byte[1024];
 				inputStream.read(response);
 				String result = new String(response);
-				System.out.println(result);
 				String[] splitResult = result.split(" ", 2);
 				if (splitResult[0].equals("0"))
 				{
@@ -79,22 +83,20 @@ public class Client {
 					System.out.println("ERROR: REPEAT");
 					continue;
 				}
-				System.out.println(splitResult[1]);
 			}while (!authenticationIsOk);
 			
 			System.out.print("Entrez le nom de l'image à modifier: ");
 			nomImage = prompt.nextLine();
 			
-			BufferedImage image = ImageIO.read(new File("lassonde.jpg"));
-			System.out.println(image);
-
-	        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-	        ImageIO.write(image, "jpg", byteArrayOutputStream);
-
-	        byte[] size = ByteBuffer.allocate(4).putInt(byteArrayOutputStream.size()).array();
-	        outputStream.write(size);
-	        outputStream.write(byteArrayOutputStream.toByteArray());
-	        outputStream.flush();
+			System.out.print("Entrez le nouveau nom de l'image après le filtre Sobel appliqué: ");
+			nouveauNomImage = prompt.nextLine();
+			
+			envoyerImage(nomImage, outputStream);
+			
+			BufferedImage image = recevoirImage(inputStream);
+			
+	        ImageIO.write(image, "jpg", new File(nouveauNomImage));
+	        System.out.println("L'image résultat est au path suivant: " + System.getProperty("user.dir"));
 			
 		} finally {
 			// Fermeture du socket.
@@ -102,6 +104,43 @@ public class Client {
 		}
 	}
 	
+	private static void envoyerImage(String nomImage, OutputStream outputStream)
+	{
+		try{
+			BufferedImage image = ImageIO.read(new File(nomImage));
+			outputStream.write(nomImage.getBytes());
+			outputStream.flush();
+
+			ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+			ImageIO.write(image, "jpg", byteArrayOutputStream);
+
+			byte[] size = ByteBuffer.allocate(4).putInt(byteArrayOutputStream.size()).array();
+			outputStream.write(size);
+			outputStream.write(byteArrayOutputStream.toByteArray());
+			outputStream.flush();
+			System.out.println("L'image a été envoyé au serveur");
+		}
+		catch(IOException error){}
+	}
+	
+	private static BufferedImage recevoirImage(InputStream inputStream)
+	{
+		BufferedImage image = null;
+		try{
+			byte[] sizeAr = new byte[4];
+			inputStream.read(sizeAr);
+			int size = ByteBuffer.wrap(sizeAr).asIntBuffer().get();
+
+			byte[] imageAr = new byte[size];
+			inputStream.read(imageAr);
+
+			image = ImageIO.read(new ByteArrayInputStream(imageAr));
+			System.out.println("L'image a été reçu après sa modification");
+		}
+		catch(IOException error){}
+		
+		return image;
+	}	
 	
 	private static boolean adressIsValid(String adress)
 	{
@@ -138,6 +177,7 @@ public class Client {
 		}
 		return true;
 	}
+	
 	// Fonction permettant d'écrire dans un fichier les données contenues dans la
 	// stack reçu du serveur.
 	private static void writeToFile(Stack<String> myStack, String nomFichier) throws IOException {
