@@ -85,13 +85,21 @@ public class Client {
 				}
 			}while (!authenticationIsOk);
 			
-			System.out.print("Entrez le nom de l'image à modifier: ");
-			nomImage = prompt.nextLine();
+			boolean fileExists = true;
+			do {
+				System.out.print("Entrez le nom de l'image à modifier: ");
+				nomImage = prompt.nextLine();
+				
+				System.out.print("Entrez le nouveau nom de l'image après le filtre Sobel appliqué: ");
+				nouveauNomImage = prompt.nextLine();
+				
+				fileExists = envoyerImage(nomImage, outputStream);
+				if (!fileExists)
+				{
+					System.out.println("File does not exist. Write a valid file name.");
+				}
+			}while(!fileExists);
 			
-			System.out.print("Entrez le nouveau nom de l'image après le filtre Sobel appliqué: ");
-			nouveauNomImage = prompt.nextLine();
-			
-			envoyerImage(nomImage, outputStream);
 			
 			BufferedImage image = recevoirImage(inputStream);
 			
@@ -104,7 +112,7 @@ public class Client {
 		}
 	}
 	
-	private static void envoyerImage(String nomImage, OutputStream outputStream)
+	private static boolean envoyerImage(String nomImage, OutputStream outputStream)
 	{
 		try{
 			BufferedImage image = ImageIO.read(new File(nomImage));
@@ -119,8 +127,11 @@ public class Client {
 			outputStream.write(byteArrayOutputStream.toByteArray());
 			outputStream.flush();
 			System.out.println("L'image a été envoyé au serveur");
+			return true;
 		}
-		catch(IOException error){}
+		catch(IOException error){
+			return false;
+		}
 	}
 	
 	private static BufferedImage recevoirImage(InputStream inputStream)
