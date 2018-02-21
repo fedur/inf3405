@@ -1,27 +1,16 @@
 import java.awt.image.BufferedImage;
-import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-import java.net.Inet4Address;
-import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Scanner;
-import java.util.Stack;
 
-import javax.imageio.IIOException;
 import javax.imageio.ImageIO;
 
 public class Client {
@@ -29,6 +18,7 @@ public class Client {
 
 		Socket clientSocket = null;
 		try {
+			//initialisation de toutes les variables
 			Scanner prompt = new Scanner(System.in);
 			InputStream inputStream = null;
 			OutputStream outputStream = null;
@@ -39,19 +29,23 @@ public class Client {
 			String nomImage = "";
 			String nouveauNomImage = "";
 			
+			// boucle pour que l'utilisateur entre un adresse IP valide
 			do{
 				System.out.print("Entrez l'adresse ip du serveur: ");
 				adresse = prompt.nextLine();
 			}while(!adressIsValid(adresse));
 			
+			// boucle pour que l'utilisateur entre un port valide
 			do{
 				System.out.print("Entrez le port du socket: ");
 				port = prompt.nextLine();
 			}while(!portIsValid(port));
 
+			// création du socket et de son outputStream
 			clientSocket = new Socket(adresse,Integer.parseInt(port));
 			outputStream = clientSocket.getOutputStream();
 			
+			// boucle pour s'assurer que l'authentification de l'usager est valide
 			boolean authenticationIsOk = true;
 			do
 			{
@@ -60,16 +54,20 @@ public class Client {
 				
 				System.out.print("Entrez votre mot de passe: ");
 				motDePasse = prompt.nextLine();
+				
+				// envoyer le nom d'usager et le mot de passe au serveur pour la validation
 				String usagerMP = usager + " " + motDePasse;
 				outputStream.write(usagerMP.getBytes());
 				outputStream.flush();
 				
 				inputStream = clientSocket.getInputStream();
 				
+				// reception de la réponse du serveur pour savoir si l'usager est bel et bien dans la base de données du serveur
 				byte[] response = new byte[1024];
 				inputStream.read(response);
 				String result = new String(response);
 				String[] splitResult = result.split(" ", 2);
+				
 				if (splitResult[0].equals("0"))
 				{
 					authenticationIsOk = false;
@@ -83,8 +81,13 @@ public class Client {
 					System.out.println("ERROR: REPEAT");
 					continue;
 				}
+				if (!authenticationIsOk)
+				{
+					System.out.println("Authentication is not valid. Enter your username and password again.");
+				}
 			}while (!authenticationIsOk);
 			
+			// boucle pour savoir si l'usager entre le nom d'une image valide
 			boolean fileExists = true;
 			do {
 				System.out.print("Entrez le nom de l'image à modifier: ");
@@ -93,6 +96,7 @@ public class Client {
 				System.out.print("Entrez le nouveau nom de l'image après le filtre Sobel appliqué: ");
 				nouveauNomImage = prompt.nextLine();
 				
+				// envoyer l'image avec le nom au serveur pour la modification Sobel
 				fileExists = envoyerImage(nomImage, outputStream);
 				if (!fileExists)
 				{
@@ -100,9 +104,10 @@ public class Client {
 				}
 			}while(!fileExists);
 			
-			
+			// recevoir l'image après modification par le serveur
 			BufferedImage image = recevoirImage(inputStream);
 			
+			// enregistrer l'image modifié dans le répertoire source et afficher le path de l'enregistrement
 	        ImageIO.write(image, "jpg", new File(nouveauNomImage));
 	        System.out.println("L'image résultat est au path suivant: " + System.getProperty("user.dir"));
 			
@@ -112,16 +117,20 @@ public class Client {
 		}
 	}
 	
+	// méthode permettant l'envoi de l'image au serveur
 	private static boolean envoyerImage(String nomImage, OutputStream outputStream)
 	{
 		try{
+			// Lire l'image source dans le répertoire source et voir si elle existe et si oui envoyer le nom de l'image au serveur
 			BufferedImage image = ImageIO.read(new File(nomImage));
 			outputStream.write(nomImage.getBytes());
 			outputStream.flush();
 
+			// mettre l'image dans un byteArrayOutputStream pour l'envoi de l'image au serveur
 			ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 			ImageIO.write(image, "jpg", byteArrayOutputStream);
 
+			// envoyer le size de l'image en premier pour envoyer l'image par la suite
 			byte[] size = ByteBuffer.allocate(4).putInt(byteArrayOutputStream.size()).array();
 			outputStream.write(size);
 			outputStream.write(byteArrayOutputStream.toByteArray());
@@ -134,16 +143,20 @@ public class Client {
 		}
 	}
 	
+	// méthode permettant la réception de l'image du serveur
 	private static BufferedImage recevoirImage(InputStream inputStream)
 	{
 		BufferedImage image = null;
 		try{
+			DataInputStream in = new DataInputStream(inputStream);
+			//création d'un byte array pour accueillir l'image avec le size reçu en premier
 			byte[] sizeAr = new byte[4];
 			inputStream.read(sizeAr);
 			int size = ByteBuffer.wrap(sizeAr).asIntBuffer().get();
 
+			// Lire l'image du socket
 			byte[] imageAr = new byte[size];
-			inputStream.read(imageAr);
+			in.readFully(imageAr);
 
 			image = ImageIO.read(new ByteArrayInputStream(imageAr));
 			System.out.println("L'image a été reçu après sa modification");
@@ -151,8 +164,9 @@ public class Client {
 		catch(IOException error){}
 		
 		return image;
-	}	
+	}
 	
+	//méthode permettant de vérifier si l'entrée d'une addresse IP est valide
 	private static boolean adressIsValid(String adress)
 	{
 		String[] octets = adress.split("\\.");
@@ -174,6 +188,7 @@ public class Client {
 		return true;
 	}
 	
+	//méthode permettant de vérifier si l'entrée du port est valide
 	private static boolean portIsValid(String port)
 	{
 		int portAdress = 0;
@@ -187,19 +202,5 @@ public class Client {
 			return false;
 		}
 		return true;
-	}
-	
-	// Fonction permettant d'écrire dans un fichier les données contenues dans la
-	// stack reçu du serveur.
-	private static void writeToFile(Stack<String> myStack, String nomFichier) throws IOException {
-		BufferedWriter out = null;
-		try {
-			out = new BufferedWriter(new FileWriter(nomFichier));
-			while (!myStack.isEmpty()) {
-				out.write(myStack.pop() + "\n");
-			}
-		} finally {
-			out.close();
-		}
 	}
 }

@@ -1,57 +1,32 @@
-
-
-import java.awt.image.BufferedImage;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.ByteBuffer;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
 import java.util.Scanner;
-import java.util.Stack;
-
-import javax.imageio.ImageIO;
-
-import javafx.util.Pair;
 
 public class Server {
 	
 	public static void main(String[] args) throws IOException, ClassNotFoundException {
+		//initialisation de toutes les variables
 		Socket socket = null;
 		String IpAddress = "";
 		String port = "";
 		Scanner prompt = new Scanner(System.in);
 		ServerSocket serverSocket = null;
 		
+		// boucle pour que l'utilisateur entre un adresse IP valide
 		do{
 			System.out.print("Entrez l'adresse ip de la machine pour l'utilisation du serveur: ");
 			IpAddress = prompt.nextLine();
 		}while(!adressIsValid(IpAddress));
+		
+		// boucle pour que l'utilisateur entre un port valide
 		do{
 			System.out.print("Entrez le port du socket: ");
 			port = prompt.nextLine();
 		}while(!portIsValid(port));
 		
+		// création du socket, l'acceptation de nouveaux clients et un thread de créer pour chaque nouveau client
 		serverSocket = new ServerSocket(Integer.parseInt(port), 1000, InetAddress.getByName(IpAddress));
 		while(true){
 			try {
@@ -63,6 +38,7 @@ public class Server {
 		}
 	}
 	
+	//méthode permettant de vérifier si l'entrée d'une addresse IP est valide
 	private static boolean adressIsValid(String adress)
 	{
 		String[] octets = adress.split("\\.");
@@ -84,6 +60,7 @@ public class Server {
 		return true;
 	}
 	
+	//méthode permettant de vérifier si l'entrée du port est valide
 	private static boolean portIsValid(String port)
 	{
 		int portAdress = 0;

@@ -3,6 +3,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -20,19 +21,21 @@ import javax.imageio.ImageIO;
 
 
 public class ServerThread extends Thread {
-	
+	//initialisation de toutes les variables
 		private static String FILENAME = "bd.txt";
 		private String ipAdress = "";
 		private String port = "";
 	    protected Socket socket;
 		private static final DateFormat sdf = new SimpleDateFormat("yyyy-MM-dd@HH:mm:ss");
 
+		// constructeur d'un nouveau thread
 	    public ServerThread(Socket clientSocket, String ipAdress, String port) {
 	    	this.port = port;
 	    	this.ipAdress = ipAdress;
 	        this.socket = clientSocket;
 	    }
-
+	    
+	    // exécution du thread
 	    public void run() {
 	    	STATUS status;
 	    	OutputStream outputStream = null;
@@ -42,17 +45,20 @@ public class ServerThread extends Thread {
 	    		do{
 					System.out.println("Waiting for client message...");
 					
+					// recevoir le nom d'usager et le mot de passe du client
 					outputStream = socket.getOutputStream();
 					inputStream = socket.getInputStream();
-					byte[] response = new byte[1024];
-					inputStream.read(response);
-					String result = new String(response);
-					result = result.replaceAll("\0", "").trim();
+					byte[] byteAuthentication = new byte[1024];
+					inputStream.read(byteAuthentication);
+					String authentication = new String(byteAuthentication);
+					authentication = authentication.replaceAll("\0", "").trim();
 					
-					String[] splitResponse = result.split(" ", 2);
-					status = fetchDb(splitResponse[0], splitResponse[1]); 
-					usager = splitResponse[0];
+					// observer si le nom d'usager et le mot de passe font partie de la base de données du serveur
+					String[] splitAuthentication = authentication.split(" ", 2);
+					status = fetchDb(splitAuthentication[0], splitAuthentication[1]); 
+					usager = splitAuthentication[0];
 					
+					// renvoyer une réponse au client sur la validité de son authentification
 					switch(status)
 					{
 						case VALID:
@@ -74,6 +80,7 @@ public class ServerThread extends Thread {
 					
 				}while (status == STATUS.ERROR || status == STATUS.PASSWORD_NON_MATCHING);
 				
+	    		//recevoir le nom de l'image a être modifié
 				byte[] bnomImage = new byte[1024];
 				inputStream.read(bnomImage);
 				String nomImage = new String(bnomImage);
@@ -84,17 +91,24 @@ public class ServerThread extends Thread {
 				Date Date = new Date();
 				String date = sdf.format(Date);
 		        
+				// afficher l'information de ce qui a été fait
 		        String messageReception = "[" + usager + " - " + ipAdress + ":" + port + " - " + date + "] : " + nomImage;
 		        System.out.println(messageReception);
 		        
+		        // effectuer la modification Sobel sur l'image
 		        image  = Sobel.process(image);
+		        
+		        // réenvoyer l'image modifié au client
 		        envoyerImage(image, outputStream);
+		        
+		        // fermer l'écoute du socket
 				socket.close();
 	    	}
 	    	catch(Exception e){}
 	    	
 	    }
 	    
+	    // méthode permettant de chercher la base de données avec le nom d'usager et le mot de passe
 	    private static STATUS fetchDb(String nomUsager, String motDePasse) throws IOException
 		{
 			List<String> listOfLines = new ArrayList<String>();
@@ -140,7 +154,7 @@ public class ServerThread extends Thread {
 				bufferedReader.close();
 			}
 			
-			// If function did not returnl, append the new user to the db
+			// si la fonction ne retourne rien, ajouter l'usager a la base de données
 			BufferedWriter writer = new BufferedWriter(new FileWriter(FILENAME,true));
 			try {
 				writer.newLine();
@@ -153,6 +167,8 @@ public class ServerThread extends Thread {
 			}
 			return STATUS.NEW_USER;
 		}
+	    
+	    // méthode permettant l'envoi de l'image au client
 		private static void envoyerImage(BufferedImage image, OutputStream outputStream)
 		{
 			try{
@@ -167,16 +183,18 @@ public class ServerThread extends Thread {
 			catch(IOException error){}
 		}
 		
+		// méthode permettant la réception de l'image du client
 		private static BufferedImage recevoirImage(InputStream inputStream)
 		{
 			BufferedImage image = null;
 			try{
+				DataInputStream in = new DataInputStream(inputStream);
 				byte[] sizeAr = new byte[4];
 				inputStream.read(sizeAr);
 				int size = ByteBuffer.wrap(sizeAr).asIntBuffer().get();
 
 				byte[] imageAr = new byte[size];
-				inputStream.read(imageAr);
+				in.readFully(imageAr);
 
 				image = ImageIO.read(new ByteArrayInputStream(imageAr));
 			}
@@ -185,7 +203,7 @@ public class ServerThread extends Thread {
 			return image;
 		}
 
-		
+		// l'enum des status pour l'authentification d'un usager
 		enum STATUS{
 			VALID,
 			PASSWORD_NON_MATCHING,
