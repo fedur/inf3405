@@ -41,7 +41,7 @@ public class Client {
 				port = prompt.nextLine();
 			}while(!portIsValid(port));
 
-			// création du socket et de son outputStream
+			// crÃ©ation du socket et de son outputStream
 			clientSocket = new Socket(adresse,Integer.parseInt(port));
 			outputStream = clientSocket.getOutputStream();
 			
@@ -62,7 +62,7 @@ public class Client {
 				
 				inputStream = clientSocket.getInputStream();
 				
-				// reception de la réponse du serveur pour savoir si l'usager est bel et bien dans la base de données du serveur
+				// reception de la rÃ©ponse du serveur pour savoir si l'usager est bel et bien dans la base de donnÃ©es du serveur
 				byte[] response = new byte[1024];
 				inputStream.read(response);
 				String result = new String(response);
@@ -90,10 +90,10 @@ public class Client {
 			// boucle pour savoir si l'usager entre le nom d'une image valide
 			boolean fileExists = true;
 			do {
-				System.out.print("Entrez le nom de l'image à modifier: ");
+				System.out.print("Entrez le nom de l'image Ã  modifier: ");
 				nomImage = prompt.nextLine();
 				
-				System.out.print("Entrez le nouveau nom de l'image après le filtre Sobel appliqué: ");
+				System.out.print("Entrez le nouveau nom de l'image aprÃ¨s le filtre Sobel appliquÃ©: ");
 				nouveauNomImage = prompt.nextLine();
 				
 				// envoyer l'image avec le nom au serveur pour la modification Sobel
@@ -104,12 +104,12 @@ public class Client {
 				}
 			}while(!fileExists);
 			
-			// recevoir l'image après modification par le serveur
+			// recevoir l'image aprÃ¨s modification par le serveur
 			BufferedImage image = recevoirImage(inputStream);
 			
-			// enregistrer l'image modifié dans le répertoire source et afficher le path de l'enregistrement
+			// enregistrer l'image modifiÃ© dans le rÃ©pertoire source et afficher le path de l'enregistrement
 	        ImageIO.write(image, "jpg", new File(nouveauNomImage));
-	        System.out.println("L'image résultat est au path suivant: " + System.getProperty("user.dir"));
+	        System.out.println("L'image rÃ©sultat est au path suivant: " + System.getProperty("user.dir"));
 			
 		} finally {
 			// Fermeture du socket.
@@ -117,11 +117,11 @@ public class Client {
 		}
 	}
 	
-	// méthode permettant l'envoi de l'image au serveur
+	// mÃ©thode permettant l'envoi de l'image au serveur
 	private static boolean envoyerImage(String nomImage, OutputStream outputStream)
 	{
 		try{
-			// Lire l'image source dans le répertoire source et voir si elle existe et si oui envoyer le nom de l'image au serveur
+			// Lire l'image source dans le rÃ©pertoire source et voir si elle existe et si oui envoyer le nom de l'image au serveur
 			BufferedImage image = ImageIO.read(new File(nomImage));
 			outputStream.write(nomImage.getBytes());
 			outputStream.flush();
@@ -135,7 +135,7 @@ public class Client {
 			outputStream.write(size);
 			outputStream.write(byteArrayOutputStream.toByteArray());
 			outputStream.flush();
-			System.out.println("L'image a été envoyé au serveur");
+			System.out.println("L'image a Ã©tÃ© envoyÃ© au serveur");
 			return true;
 		}
 		catch(IOException error){
@@ -143,13 +143,13 @@ public class Client {
 		}
 	}
 	
-	// méthode permettant la réception de l'image du serveur
+	// mÃ©thode permettant la rÃ©ception de l'image du serveur
 	private static BufferedImage recevoirImage(InputStream inputStream)
 	{
 		BufferedImage image = null;
 		try{
 			DataInputStream in = new DataInputStream(inputStream);
-			//création d'un byte array pour accueillir l'image avec le size reçu en premier
+			//crÃ©ation d'un byte array pour accueillir l'image avec le size reÃ§u en premier
 			byte[] sizeAr = new byte[4];
 			inputStream.read(sizeAr);
 			int size = ByteBuffer.wrap(sizeAr).asIntBuffer().get();
@@ -159,14 +159,14 @@ public class Client {
 			in.readFully(imageAr);
 
 			image = ImageIO.read(new ByteArrayInputStream(imageAr));
-			System.out.println("L'image a été reçu après sa modification");
+			System.out.println("L'image a Ã©tÃ© reÃ§u aprÃ¨s sa modification");
 		}
 		catch(IOException error){}
 		
 		return image;
 	}
 	
-	//méthode permettant de vérifier si l'entrée d'une addresse IP est valide
+	//mÃ©thode permettant de vÃ©rifier si l'entrÃ©e d'une addresse IP est valide
 	private static boolean adressIsValid(String adress)
 	{
 		String[] octets = adress.split("\\.");
@@ -188,7 +188,7 @@ public class Client {
 		return true;
 	}
 	
-	//méthode permettant de vérifier si l'entrée du port est valide
+	//mÃ©thode permettant de vÃ©rifier si l'entrÃ©e du port est valide
 	private static boolean portIsValid(String port)
 	{
 		int portAdress = 0;
