@@ -26,7 +26,7 @@ public class Server {
 			port = prompt.nextLine();
 		}while(!portIsValid(port));
 		
-		// création du socket, l'acceptation de nouveaux clients et un thread de créer pour chaque nouveau client
+		// cr?tion du socket, l'acceptation de nouveaux clients et un thread de cr?r pour chaque nouveau client
 		serverSocket = new ServerSocket(Integer.parseInt(port), 1000, InetAddress.getByName(IpAddress));
 		while(true){
 			try {
@@ -38,7 +38,7 @@ public class Server {
 		}
 	}
 	
-	//méthode permettant de vérifier si l'entrée d'une addresse IP est valide
+	//m?hode permettant de v?ifier si l'entr? d'une addresse IP est valide
 	private static boolean adressIsValid(String adress)
 	{
 		String[] octets = adress.split("\\.");
@@ -60,7 +60,7 @@ public class Server {
 		return true;
 	}
 	
-	//méthode permettant de vérifier si l'entrée du port est valide
+	//m?hode permettant de v?ifier si l'entr? du port est valide
 	private static boolean portIsValid(String port)
 	{
 		int portAdress = 0;

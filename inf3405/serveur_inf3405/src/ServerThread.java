@@ -35,7 +35,7 @@ public class ServerThread extends Thread {
 	        this.socket = clientSocket;
 	    }
 	    
-	    // exécution du thread
+	    // exÃ©cution du thread
 	    public void run() {
 	    	STATUS status;
 	    	OutputStream outputStream = null;
@@ -53,12 +53,12 @@ public class ServerThread extends Thread {
 					String authentication = new String(byteAuthentication);
 					authentication = authentication.replaceAll("\0", "").trim();
 					
-					// observer si le nom d'usager et le mot de passe font partie de la base de données du serveur
+					// observer si le nom d'usager et le mot de passe font partie de la base de donnÃ©es du serveur
 					String[] splitAuthentication = authentication.split(" ", 2);
 					status = fetchDb(splitAuthentication[0], splitAuthentication[1]); 
 					usager = splitAuthentication[0];
 					
-					// renvoyer une réponse au client sur la validité de son authentification
+					// renvoyer une rÃ©ponse au client sur la validitÃ© de son authentification
 					switch(status)
 					{
 						case VALID:
@@ -80,35 +80,35 @@ public class ServerThread extends Thread {
 					
 				}while (status == STATUS.ERROR || status == STATUS.PASSWORD_NON_MATCHING);
 				
-	    		//recevoir le nom de l'image a être modifié
+	    		//recevoir le nom de l'image a Ãªtre modifiÃ©
 				byte[] bnomImage = new byte[1024];
 				inputStream.read(bnomImage);
 				String nomImage = new String(bnomImage);
 				nomImage = nomImage.replaceAll("\0", "").trim();
 				
-				//recevoir l'image, la traitée et la réenvoyer
+				//recevoir l'image, la traitÃ©e et la rÃ©envoyer
 		        BufferedImage image = recevoirImage(inputStream);
 				Date Date = new Date();
 				String date = sdf.format(Date);
 		        
-				// afficher l'information de ce qui a été fait
+				// afficher l'information de ce qui a Ã©tÃ© fait
 		        String messageReception = "[" + usager + " - " + ipAdress + ":" + port + " - " + date + "] : " + nomImage;
 		        System.out.println(messageReception);
 		        
 		        // effectuer la modification Sobel sur l'image
 		        image  = Sobel.process(image);
 		        
-		        // réenvoyer l'image modifié au client
+		        // rÃ©envoyer l'image modifiÃ© au client
 		        envoyerImage(image, outputStream);
 		        
-		        // fermer l'écoute du socket
+		        // fermer l'Ã©coute du socket
 				socket.close();
 	    	}
 	    	catch(Exception e){}
 	    	
 	    }
 	    
-	    // méthode permettant de chercher la base de données avec le nom d'usager et le mot de passe
+	    // mÃ©thode permettant de chercher la base de donnÃ©es avec le nom d'usager et le mot de passe
 	    private static STATUS fetchDb(String nomUsager, String motDePasse) throws IOException
 		{
 			List<String> listOfLines = new ArrayList<String>();
@@ -154,7 +154,7 @@ public class ServerThread extends Thread {
 				bufferedReader.close();
 			}
 			
-			// si la fonction ne retourne rien, ajouter l'usager a la base de données
+			// si la fonction ne retourne rien, ajouter l'usager a la base de donnÃ©es
 			BufferedWriter writer = new BufferedWriter(new FileWriter(FILENAME,true));
 			try {
 				writer.newLine();
@@ -168,7 +168,7 @@ public class ServerThread extends Thread {
 			return STATUS.NEW_USER;
 		}
 	    
-	    // méthode permettant l'envoi de l'image au client
+	    // mÃ©thode permettant l'envoi de l'image au client
 		private static void envoyerImage(BufferedImage image, OutputStream outputStream)
 		{
 			try{
@@ -183,7 +183,7 @@ public class ServerThread extends Thread {
 			catch(IOException error){}
 		}
 		
-		// méthode permettant la réception de l'image du client
+		// mÃ©thode permettant la rÃ©ception de l'image du client
 		private static BufferedImage recevoirImage(InputStream inputStream)
 		{
 			BufferedImage image = null;
